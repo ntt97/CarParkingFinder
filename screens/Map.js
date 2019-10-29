@@ -3,12 +3,14 @@ import {
   View,
   Text,
   StyleSheet,
-  ScrollView,
   Dimensions,
-  TouchableWithoutFeedback
+  TouchableWithoutFeedback,
+  Picker,
+  FlatList
 } from "react-native";
 import MapView from "react-native-maps";
-
+import { Ionicons } from "@expo/vector-icons";
+const {Marker} = MapView;
 const { height, width } = Dimensions.get("screen");
 const parkings = [
   {
@@ -18,9 +20,9 @@ const parkings = [
     rating: 4.2,
     spots: 20,
     free: 10,
-    location: {
-      lat: 37.78835,
-      lng: -122.4334
+    coordinate: {
+      latitude: 37.78845,
+      longitude: -122.4344
     }
   },
   {
@@ -30,9 +32,9 @@ const parkings = [
     rating: 3.8,
     spots: 25,
     free: 20,
-    location: {
-      lat: 37.78825,
-      lng: -122.4324
+    coordinate: {
+      latitude: 37.78615,
+      longitude: -122.4314
     }
   },
   {
@@ -42,16 +44,24 @@ const parkings = [
     rating: 4.0,
     spots: 50,
     free: 25,
-    location: {
-      lat: 37.78815,
-      lng: -122.4314
+    coordinate: {
+      latitude: 37.78815,
+      longitude: -122.4314
     }
   }
 ];
 export default class Map extends Component {
   state = {
-    hours: {}
+    hours: {},
+    active:null
   };
+  componentDidMount() {
+    const hours = {};
+    parkings.map(parking => {
+      hours[parking.id] = 1;
+    });
+    this.setState({ hours });
+  }
   renderHeader() {
     return (
       <View style={styles.header}>
@@ -62,44 +72,105 @@ export default class Map extends Component {
   renderParking(item) {
     const { hours } = this.state;
     return (
-      <View key={`parking-${item.id}`} style={styles.parking}>
+      <TouchableWithoutFeedback onPress={()=>this.setState({active:item.id})}>
+        <View key={`parking-${item.id}`} style={styles.parking}>
         <View style={{ flex: 1, flexDirection: "column" }}>
           <Text>
             x {item.spots} {item.title}
           </Text>
+          {/* <Picker
+              selectedValue={this.state.hours[item.id ||1]}
+              style={{height: 50, width: 120}}
+              itemStyle={{borderWidth:1,borderColor:'grey'}}
+              onValueChange={(itemValue, itemIndex) =>
+                this.setState({hours: {...this.state.hours,[item.id]:itemValue}})
+              }>
+              <Picker.Item label="01:00" value={1} />
+              <Picker.Item label="02:00" value={2} />
+              <Picker.Item label="03:00" value={3} />
+              <Picker.Item label="04:00" value={4} />
+              <Picker.Item label="05:00" value={5} />
+              <Picker.Item label="06:00" value={6} />
+          </Picker> */}
+          <View
+            style={{
+              width: 100,
+              borderRadius: 6,
+              borderColor: "grey",
+              borderWidth: 0.5,
+              padding: 4
+            }}
+          >
+            <Text style={{ fontSize: 16 }}>05:00 hrs</Text>
+          </View>
         </View>
         <View style={{ flex: 1, flexDirection: "row" }}>
-          <View style={{flex:1}}> 
-            <Text>${item.price}</Text>
-            <Text>{item.rating}</Text>
+          <View style={{ flex: 1, justifyContent: "space-around" }}>
+            <View
+              style={{ flex: 1, flexDirection: "row", alignItems: "center" }}
+            >
+              <Ionicons color="#7D81BA" size={18} name="ios-pricetag" />
+              <Text style={{ marginLeft: 12 }}>${item.price}</Text>
+            </View>
+
+            <View
+              style={{ flex: 1, flexDirection: "row", alignItems: "center" }}
+            >
+              <Ionicons color="#7D81BA" size={18} name="ios-star" />
+              <Text style={{ marginLeft: 12 }}>{item.rating}</Text>
+            </View>
           </View>
 
-          <TouchableWithoutFeedback>
+          <TouchableWithoutFeedback onPress={() => {}}>
             <View style={styles.buy}>
-              <View >
-                <Text style={{flex:2,fontSize:25,color:"#fff",fontWeight:'500'}}>${item.price * 2}</Text>
-                <Text style={{color:"#fff"}}>{item.price}x{hours[item.id]} hrs</Text>
+              <View>
+                <Text
+                  style={{
+                    flex: 2,
+                    fontSize: 25,
+                    color: "#fff",
+                    fontWeight: "500"
+                  }}
+                >
+                  ${item.price * 2}
+                </Text>
+                <Text style={{ color: "#fff" }}>
+                  {item.price}x{hours[item.id]} hrs
+                </Text>
               </View>
-              <View style={{flex:1,justifyContent:"center",alignItems:"center"}}>
-                <Text style={{fontSize:25,color:'#fff'}}>></Text>
+              <View
+                style={{
+                  flex: 1,
+                  justifyContent: "center",
+                  alignItems: "center"
+                }}
+              >
+                <Text
+                  style={{ fontSize: 25, color: "#fff", fontWeight: "500" }}
+                >
+                  >
+                </Text>
               </View>
             </View>
           </TouchableWithoutFeedback>
         </View>
       </View>
+      </TouchableWithoutFeedback>
+      
     );
   }
   renderParkings() {
     return (
-      <ScrollView
+      <FlatList
         horizontal={true}
         style={styles.parkings}
         pagingEnabled
         scrollEnabled
         showsHorizontalScrollIndicator={false}
-      >
-        {parkings.map(parking => this.renderParking(parking))}
-      </ScrollView>
+        data={parkings}
+        renderItem={({ item }) => this.renderParking(item)}
+        keyExtractor={item => `parking-${item.id}`}
+      />
     );
   }
 
@@ -111,11 +182,24 @@ export default class Map extends Component {
           initialRegion={{
             latitude: 37.78825,
             longitude: -122.4324,
-            latitudeDelta: 0.0922,
-            longitudeDelta: 0.0421
+            latitudeDelta: 0.0122,
+            longitudeDelta: 0.0121
           }}
           style={styles.map}
-        />
+        >
+          {parkings.map(parking => (
+              <Marker
+                key={`marker-${parking.id}`}
+                coordinate={parking.coordinate}
+              >
+                <View style={[styles.marker,this.state.active===parking.id? styles.active:null]}>
+                    <Text style={{color:"#B40815"}}>${parking.price}</Text>
+                    <Text>({parking.free}/{parking.spots})</Text>
+                </View>
+              </Marker>
+           ))}
+        </MapView>
+        
         {this.renderParkings()}
       </View>
     );
@@ -146,13 +230,38 @@ const styles = StyleSheet.create({
     padding: 12,
     marginHorizontal: 24,
     width: width - 24 * 2,
-    flexDirection: "row"
+    flexDirection: "row",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 12,
+    },
+    shadowOpacity: 0.5,
+    shadowRadius: 4,
+    elevation: 16,
   },
   buy: {
     flex: 1,
-    backgroundColor: "red",
+    backgroundColor: "#840B15",
     borderRadius: 6,
-    padding:12,
-    flexDirection:'row'
+    padding: 12,
+    flexDirection: "row"
+  },
+  marker:{
+   
+    flex:1,   
+    flexDirection:"row",
+    borderRadius:24,
+    paddingVertical:12,
+    paddingHorizontal:24,
+    backgroundColor:"#fff",
+    borderWidth:1,
+    borderColor:'grey'
+    
+
+  },
+  active:{
+    borderColor:'#B40815',
+    borderWidth:1
   }
 });
